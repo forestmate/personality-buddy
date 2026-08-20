@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🧩 人格搭子·互补匹配 — 测出谁最适合你</title>
+<style>
+:root{
+  --bg:#0f0c29; --bg2:#24243e;
+  --card:rgba(255,255,255,.07); --border:rgba(255,255,255,.12);
+  --acc:#8b5cf6; --acc2:#ec4899; --green:#34d399; --yellow:#fbbf24; --red:#f87171;
+  --text:#e2e8f0; --sub:#94a3b8; --radius:18px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);min-height:100vh;color:var(--text);
+  overflow-x:hidden;
+}
+#stars{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--d,3s) ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:.15;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
+#app{position:relative;z-index:1}
+.page{display:none;min-height:100vh;padding:20px}
+.page.active{display:flex;flex-direction:column;align-items:center;justify-content:center}
+
+/* ── 通用 ── */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border-radius:40px;border:none;
+  background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;font-size:1rem;font-weight:700;
+  cursor:pointer;transition:transform .2s,box-shadow .2s;box-shadow:0 8px 24px rgba(139,92,246,.35);
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(139,92,246,.5)}
+.btn.ghost{background:transparent;border:1px solid var(--border);box-shadow:none;color:var(--sub)}
+.btn.small{padding:8px 18px;font-size:.85rem}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;backdrop-filter:blur(8px)}
+.grad-text{background:linear-gradient(90deg,var(--acc),var(--acc2),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.tag{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.78rem;background:rgba(139,92,246,.18);border:1px solid rgba(139,92,246,.4);margin:3px}
+.tag.green{background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.4)}
+.tag.red{background:rgba(248,113,113,.15);border-color:rgba(248,113,113,.4)}
+.tag.yellow{background:rgba(251,191,36,.15);border-color:rgba(251,191,36,.4)}
+.section-title{font-size:1.25rem;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* ── 欢迎页 ── */
+#page-welcome{text-align:center;gap:24px}
+.w-emoji{font-size:4.6rem;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.w-title{font-size:clamp(2rem,5.5vw,3.2rem);font-weight:900;line-height:1.25}
+.w-sub{color:var(--sub);max-width:480px;line-height:1.8}
+.stats-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 20px;text-align:center;min-width:96px}
+.stat b{font-size:1.4rem;display:block;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat span{font-size:.72rem;color:var(--sub)}
+
+/* ── 测试页 ── */
+#page-test{justify-content:flex-start}
+.test-wrap{width:100%;max-width:560px;margin:0 auto;padding:30px 0}
+.progress-bar{height:8px;background:rgba(255,255,255,.1);border-radius:10px;overflow:hidden;margin-bottom:8px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:10px;transition:width .4s}
+.progress-text{font-size:.8rem;color:var(--sub);text-align:right;margin-bottom:24px}
+.q-card{padding:28px 24px}
+.q-index{font-size:.8rem;color:var(--acc2);font-weight:700;margin-bottom:10px}
+.q-text{font-size:1.2rem;font-weight:700;line-height:1.7;margin-bottom:24px}
+.q-option{
+  width:100%;text-align:left;padding:15px 18px;margin-bottom:10px;border-radius:14px;
+  background:rgba(255,255,255,.05);border:1.5px solid var(--border);color:var(--text);
+  font-size:.98rem;cursor:pointer;transition:all .2s;
+}
+.q-option:hover{border-color:var(--acc);background:rgba(139,92,246,.12)}
+.q-option.selected{border-color:var(--acc);background:rgba(139,92,246,.22);font-weight:600}
+.q-nav{display:flex;justify-content:space-between;margin-top:18px}
+
+/* ── 结果页 ── */
+#page-result{justify-content:flex-start}
+.result-wrap{width:100%;max-width:720px;padding:30px 0}
+.result-head{text-align:center;margin-bottom:28px}
+.result-title{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:900;margin-bottom:6px}
+.result-sub{color:var(--sub);font-size:.9rem}
+.code-badge{
+  display:inline-block;margin-top:12px;padding:8px 20px;border-radius:30px;font-size:1.2rem;font-weight:800;
+  letter-spacing:3px;background:rgba(139,92,246,.18);border:1.5px solid var(--acc);color:var(--acc2);
+}
+.match-card{border-radius:var(--radius);padding:20px;margin-bottom:16px;border:1px solid var(--border);background:var(--card)}
+.match-card h3{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.match-card .mt-type{font-size:1.05rem;font-weight:800;color:var(--acc2)}
+.match-card .mt-code{font-size:.78rem;color:var(--sub);letter-spacing:2px;margin-left:8px}
+.match-card ul{list-style:none;padding:0}
+.match-card li{padding:7px 0 7px 20px;position:relative;font-size:.9rem;line-height:1.65;color:var(--sub)}
+.match-card li::before{content:'';position:absolute;left:0;top:15px;width:8px;height:8px;border-radius:50%}
+.match-card.comp li::before{background:var(--green)}
+.match-card.conflict li::before{background:var(--red)}
+.match-card.similar li::before{background:var(--yellow)}
+.match-card li b{color:var(--text)}
+.radar-box{display:flex;justify-content:center;padding:10px 0}
+.dim-bars{margin-top:14px}
+.dim-bar-row{margin-bottom:10px}
+.dim-bar-label{display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:4px;color:var(--sub)}
+.dim-bar-label b{color:var(--text)}
+.dim-bar{height:8px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden}
+.dim-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width 1s}
+.mt-grid{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:640px){.mt-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* 适配表 */
+.table-toggle{width:100%;margin:10px 0 16px}
+.table-wrap{max-height:560px;overflow-y:auto;padding-right:4px}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th,td{padding:10px 8px;text-align:left;border-bottom:1px solid var(--border)}
+th{position:sticky;top:0;background:#1e1b4b;color:var(--sub);font-size:.75rem;z-index:1}
+.score-pill{display:inline-block;min-width:42px;text-align:center;padding:3px 8px;border-radius:12px;font-size:.75rem;font-weight:700}
+.score-high{background:rgba(52,211,153,.18);color:var(--green)}
+.score-mid{background:rgba(251,191,36,.18);color:var(--yellow)}
+.score-low{background:rgba(248,113,113,.18);color:var(--red)}
+
+/* 分享区 */
+.share-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:20px}
+#toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:#fff;color:#111;padding:12px 24px;border-radius:30px;font-weight:600;z-index:999;transition:transform .4s;box-shadow:0 8px 30px rgba(0,0,0,.3);font-size:.9rem}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#posterModal{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:none;align-items:center;justify-content:center;flex-direction:column;padding:20px}
+#posterModal.show{display:flex}
+#posterModal canvas{max-width:92vw;max-height:72vh;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modal-btns{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;justify-content:center}
+@media(max-width:420px){.btn{padding:12px 22px;font-size:.9rem}.q-text{font-size:1.05rem}}
+</style>
+</head>
+<body>
+<div id="stars"></div>
+<div id="app">
+
+  <!-- 欢迎页 -->
+  <div class="page active" id="page-welcome">
+    <div class="w-emoji">🧩</div>
+    <h1 class="w-title">人格搭子<br/><span class="grad-text">互补匹配系统</span></h1>
+    <p class="w-sub">只测自己太没意思 —— 测出你的专属人格，匹配<b>最互补的天选搭子</b>，也找出<b>最相克的雷区搭子</b>，相处避坑一步到位。</p>
+    <div class="stats-row">
+      <div class="stat"><b>64</b><span>人格原型</span></div>
+      <div class="stat"><b>30</b><span>道测试题</span></div>
+      <div class="stat"><b>3</b><span>种匹配维度</span></div>
+      <div class="stat"><b>2</b><span>分钟完成</span></div>
+    </div>
+    <div style="margin-top:12px">
+      <button class="btn" onclick="startTest()">开始测试 ✨</button>
+    </div>
+    <p style="color:var(--sub);font-size:.78rem;margin-top:18px">适配：朋友搭子 · 学习搭子 · 工作搭子 · 恋爱搭子</p>
+  </div>
+
+  <!-- 测试页 -->
+  <div class="page" id="page-test">
+    <div class="test-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="pfill"></div></div>
+      <div class="progress-text" id="ptext">1 / 30</div>
+      <div class="card q-card">
+        <div class="q-index" id="qidx">第 1 题</div>
+        <div class="q-text" id="qtext"></div>
+        <div id="qopts"></div>
+        <div class="q-nav">
+          <button class="btn ghost small" id="btnPrev" onclick="prevQ()">← 上一题</button>
+          <button class="btn small" id="btnNext" onclick="nextQ()">下一题 →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 结果页 -->
+  <div class="page" id="page-result">
+    <div class="result-wrap">
+      <div class="result-head">
+        <div style="font-size:2.6rem" id="resEmoji">🪐</div>
+        <h1 class="result-title" id="resName"></h1>
+        <div class="code-badge" id="resCode"></div>
+        <p class="result-sub" id="resTags" style="margin-top:10px"></p>
+        <p class="result-sub" id="resDesc" style="margin-top:8px;line-height:1.8"></p>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="section-title">📊 六维人格雷达</div>
+        <div class="radar-box" id="radarBox"></div>
+        <div class="dim-bars" id="dimBars"></div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="section-title">💪 我的画像</div>
+        <div id="profileBox"></div>
+      </div>
+
+      <div class="section-title">🎯 搭子匹配大全</div>
+      <div class="mt-grid">
+        <div class="match-card comp" id="cardComp"></div>
+        <div class="match-card conflict" id="cardConflict"></div>
+        <div class="match-card similar" id="cardSimilar"></div>
+      </div>
+
+      <button class="btn ghost table-toggle" id="btnTable" onclick="toggleTable()">📖 查看 64 种人格适配总表</button>
+      <div class="card table-wrap" id="tableWrap" style="display:none">
+        <table>
+          <thead><tr><th>人格</th><th>类型</th><th>适配分</th><th>一句话解读</th></tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="share-row">
+        <button class="btn small" onclick="genPoster()">🖼️ 生成分享海报</button>
+        <button class="btn small ghost" onclick="copyShare()">📋 复制分享文案</button>
+        <button class="btn small ghost" onclick="resetAll()">🔄 重新测试</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="posterModal"><canvas id="posterCanvas"></canvas>
+  <div class="modal-btns">
+    <button class="btn small" onclick="downloadPoster()">⬇️ 下载图片</button>
+    <button class="btn small ghost" onclick="closePoster()">关闭</button>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ═══════════ 0. 云端配置加载（管理员在后台的修改会全站生效） ═══════════ */
+let CFG=null, TPL=null;
+(function(){
+  fetch('/api/config').then(r=>r.json()).then(cfg=>{
+    if(cfg && cfg.questions && cfg.questions.length){ CFG=cfg; TPL=cfg.templates||null; }
+    if(localStorage.getItem('dazi_result')) loadSaved();
+  }).catch(()=>{});
+})();
+function T(key,fb){return (TPL&&TPL[key])?TPL[key]:fb;}
+
+/* ═══════════ 1. 数据模型 ═══════════ */
+const DIM_KEY = ['dc','sn','ei','op','tf','al'];
+const LET = [['D','C'],['S','N'],['E','I'],['O','P'],['T','F'],['A','L']];
+const DIM_INFO = {
+  dc:{label:'决策',opts:['果断','谨慎'],cat:'comp',benefit:'一个果断拍板、一个谨慎把关，是最经典的「决策拍档」'},
+  sn:{label:'情绪',opts:['稳定','敏感'],cat:'comp',benefit:'一个提供安全感，一个提供情绪价值，是彼此的「情绪锚」'},
+  ei:{label:'社交',opts:['外向','内向'],cat:'comp',benefit:'一个开拓圈子、一个深度陪伴，一外一内把朋友圈盘活'},
+  op:{label:'规划',opts:['秩序','随性'],cat:'mix',benefit:'一个兜底规划让计划落地，一个灵活破局打破僵局',risk:'一个雷打不动按计划来，一个随性走一步看一步，节奏容易对不上'},
+  tf:{label:'思维',opts:['理性','感性'],cat:'conflict',risk:'一个讲逻辑对错，一个重感受温度，沟通容易「鸡同鸭讲」'},
+  al:{label:'行动',opts:['攻坚','躺平'],cat:'conflict',risk:'一个在冲刺、一个在躺平，一个觉得对方不进取，一个觉得对方太紧绷'}
+};
+const TRAIT = {
+  D:{name:'果断',key:'当断则断',strength:'遇事能快速拍板、雷厉风行',weak:'偶有冲动，容易忽略细节风险'},
+  C:{name:'谨慎',key:'三思后行',strength:'考虑周全、几乎不踩坑',weak:'容易想太多，机会来了会犹豫错过'},
+  S:{name:'稳定',key:'情绪稳定',strength:'大风大浪面前也稳得住，是定心丸',weak:'共情稍弱，有时读不懂身边人情绪'},
+  N:{name:'敏感',key:'细腻共情',strength:'能敏锐察觉他人情绪，相处贴心',weak:'容易内耗，一句话可能琢磨很久'},
+  E:{name:'外向',key:'主动输出',strength:'自来熟、人脉广，能迅速打开局面',weak:'独处少，有时忽略内心真正想要什么'},
+  I:{name:'内向',key:'深度独处',strength:'独处中沉淀出深度，朋友少但很铁',weak:'社交消耗大，容易错过关键机会'},
+  O:{name:'秩序',key:'计划自律',strength:'凡事有规划、做事靠谱',weak:'计划被打乱会焦虑，灵活性不足'},
+  P:{name:'随性',key:'灵活随缘',strength:'随机应变强，到哪里都能适应',weak:'容易拖延，重要事常赶最后期限'},
+  T:{name:'理性',key:'逻辑优先',strength:'判断不感情用事，决策质量高',weak:'说话太直接，容易伤到在乎的人'},
+  F:{name:'感性',key:'感受优先',strength:'重视他人感受，关系里有温度',weak:'易为情所困，重大决策可能被情绪带偏'},
+  A:{name:'攻坚',key:'全力以赴',strength:'认定目标就冲刺到底，执行力拉满',weak:'容易焦虑紧绷，休息时也在卷自己'},
+  L:{name:'躺平',key:'佛系自洽',strength:'心态极稳、抗压强，活得松弛',weak:'目标感偏弱，关键时刻缺少推进力'}
+};
+/* 8 大原型 × 8 种风格 = 64 */
+const BASES = {DSE:'领航者',DSI:'独行者',DNE:'燃星者',DNI:'暗锋者',CSE:'掌舵者',CSI:'守望者',CNE:'织梦者',CNI:'静思者'};
+const MODS  = {OTA:'锋芒',OTL:'磐石',OFA:'暖锋',OFL:'港湾',PTA:'疾风',PTL:'清风',PFA:'焰火',PFL:'流云'};
+const BASE_ROLE = {
+  DSE:'团队领航、项目负责人、气氛引擎',
+  DSI:'独立攻坚、深度执行、技术骨干',
+  DNE:'灵感点火人、市场开拓、活动主理人',
+  DNI:'幕后操盘、创意破局、危机处理',
+  CSE:'团队舵手、运营统筹、靠谱联络官',
+  CSI:'质量守门员、参谋军师、沉稳执行',
+  CNE:'情感桥梁、用户洞察、文化策划',
+  CNI:'深度思考、创作者、细节控'
+};
+/* 64 种人格 */
+const ALL_TYPES = [];
+for(let i=0;i<64;i++){
+  let code='';
+  for(let d=0;d<6;d++) code += LET[d][(i>>d)&1];
+  ALL_TYPES.push(code);
+}
+function typeInfo(code){
+  const first3=code.slice(0,3),last3=code.slice(3);
+  const cp=(CFG&&CFG.personalities&&CFG.personalities[code])||{};
+  const tags=(cp.tags&&cp.tags.length)?cp.tags:[TRAIT[code[0]].name,TRAIT[code[1]].name,TRAIT[code[2]].name];
+  const desc=`你是「${TRAIT[code[0]].key} · ${TRAIT[code[1]].key} · ${TRAIT[code[2]].key} · ${TRAIT[code[3]].key}」的人。${TRAIT[code[4]].strength}，${TRAIT[code[5]].strength}。`;
+  return {code,name:cp.name||`${BASES[first3]}·${MODS[last3]}`,tags:tags.slice(0,3),desc,role:BASE_ROLE[first3]};
+}
+
+/* ═══════════ 2. 测试题（30 题） ═══════════ */
+const RAW_Q = [
+  // 决策 D/C
+  {dim:'dc',fav:0,t:'和朋友商量周末去哪玩，你通常是第一个拍板定方案的人。'},
+  {dim:'dc',fav:1,t:'面对重要选择，你会把选项列成清单反复权衡，才肯做决定。'},
+  {dim:'dc',fav:0,t:'计划出现意外时，你能瞬间调整方向重新出击，不带犹豫。'},
+  {dim:'dc',fav:1,t:'做决定之前，你总想等所有信息都到位，哪怕多花时间。'},
+  {dim:'dc',fav:0,t:'有人说你「雷厉风行」，因为你看准了就立刻行动。'},
+  // 情绪 S/N
+  {dim:'sn',fav:1,t:'朋友向你倾诉烦恼时，你很容易跟着一起心情低落。'},
+  {dim:'sn',fav:0,t:'就算遇到糟心事，你也能很快把情绪稳住，不露声色。'},
+  {dim:'sn',fav:1,t:'别人的一句话，可能让你在心里翻来覆去琢磨很久。'},
+  {dim:'sn',fav:0,t:'你是朋友圈公认的「情绪稳定器」，大家有事都爱找你拿主意。'},
+  {dim:'sn',fav:1,t:'看感人的电影或故事，你比身边人更容易眼眶发红。'},
+  // 社交 E/I
+  {dim:'ei',fav:0,t:'参加完热闹的聚会，你不但不累，反而感觉能量满满。'},
+  {dim:'ei',fav:1,t:'比起一群人狂欢，你更享受一个人安安静静待着。'},
+  {dim:'ei',fav:0,t:'和不熟的人第一次见面，你也能很快找到话题聊起来。'},
+  {dim:'ei',fav:1,t:'周末你更愿意宅家充电，而不是出门社交应酬。'},
+  {dim:'ei',fav:0,t:'在群里或饭局上，你常常是主动活跃气氛的那个人。'},
+  // 规划 O/P
+  {dim:'op',fav:0,t:'出门旅行前，你会把行程、酒店、攻略都安排得明明白白。'},
+  {dim:'op',fav:1,t:'你的房间或桌面通常比较随性，想收就收，不想收也不勉强。'},
+  {dim:'op',fav:0,t:'每天列待办清单、逐项打勾，会给你很强的成就感。'},
+  {dim:'op',fav:1,t:'临时约饭、临时改计划，你完全 OK，随时能调整。'},
+  {dim:'op',fav:0,t:'重要的任务你习惯提前完成，而不是拖到最后一刻。'},
+  // 思维 T/F
+  {dim:'tf',fav:0,t:'做决定时，你更看重「这样做是否合理」，而不是「感觉是否舒服」。'},
+  {dim:'tf',fav:1,t:'朋友难过时，你会先给理解和安慰，而不是急着分析对错。'},
+  {dim:'tf',fav:0,t:'讨论问题时，你会直接指出逻辑漏洞，哪怕对方听了不舒服。'},
+  {dim:'tf',fav:1,t:'比起一大堆数据，你更容易被一个动人的故事说服。'},
+  {dim:'tf',fav:0,t:'你认为感情用事最容易坏事，凡事理性分析最靠谱。'},
+  // 行动 A/L
+  {dim:'al',fav:0,t:'定了目标你就会全力冲刺，不达目的不罢休。'},
+  {dim:'al',fav:1,t:'你的人生信条是「差不多就行」，舒服比上进重要。'},
+  {dim:'al',fav:0,t:'看到别人都在卷，你会忍不住焦虑，跟着一起加码。'},
+  {dim:'al',fav:1,t:'你更愿意把时间花在让自己开心的事上，而不是拼业绩。'},
+  {dim:'al',fav:0,t:'闲下来的时候，你也在琢磨怎么提升自己、学点新东西。'}
+];
+const OPTS=['非常同意','比较同意','不太同意','很不同意'];
+let QUESTIONS=[],answers={},curQ=0,sel=[];
+function buildQuestions(){
+  const QDATA=(CFG&&CFG.questions&&CFG.questions.length)?CFG.questions:RAW_Q;
+  QUESTIONS=QDATA.map((q,i)=>({...q,i}));
+  // 打乱题目顺序（防刷题）
+  for(let i=QUESTIONS.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[QUESTIONS[i],QUESTIONS[j]]=[QUESTIONS[j],QUESTIONS[i]];}
+  // 打乱选项顺序
+  QUESTIONS.forEach(q=>{q.opts=OPTS.map((o,k)=>({txt:o,val:k+1}));for(let i=3;i>0;i--){const j=Math.floor(Math.random()*(i+1));[q.opts[i],q.opts[j]]=[q.opts[j],q.opts[i]];}});
+}
+
+/* ═══════════ 3. 评分与匹配算法 ═══════════ */
+function calcResult(){
+  const scores={};
+  DIM_KEY.forEach(k=>scores[k]=0);
+  QUESTIONS.forEach(q=>{
+    const a=answers[q.i]||0;
+    // fav=0 时答「非常同意」(4) 指向 opts[0]；fav=1 时反转
+    const contrib = q.fav===0 ? a : (5-a);
+    scores[q.dim]+=contrib;
+  });
+  let code='',pcts={};
+  for(let d=0;d<6;d++){
+    const k=DIM_KEY[d], raw=scores[k]; // 5~20
+    const pct=Math.round((raw-5)/15*100); // 指向 opts[0] 的百分比
+    pcts[k]=pct;
+    code += pct>=50 ? LET[d][0] : LET[d][1];
+  }
+  return {code,pcts};
+}
+/* 两两对比：返回各维度关系 */
+function compare(a,b){
+  const res={same:[],compOpp:[],mixOpp:[],conflictOpp:[]};
+  for(let d=0;d<6;d++){
+    const k=DIM_KEY[d];
+    if(a[d]===b[d]) res.same.push(k);
+    else if(DIM_INFO[k].cat==='comp') res.compOpp.push(k);
+    else if(DIM_INFO[k].cat==='mix') res.mixOpp.push(k);
+    else res.conflictOpp.push(k);
+  }
+  return res;
+}
+function compScore(c){return c.compOpp.length*3+c.mixOpp.length*1-c.conflictOpp.length*2+c.same.length*1;}
+function conflictScore(c){return c.conflictOpp.length*3+c.mixOpp.length*2-c.compOpp.length*1;}
+function similarScore(c){return c.same.length + c.compOpp.length*0.5;}
+function rankAgainst(myCode){
+  const rows=[];
+  ALL_TYPES.forEach(c=>{
+    if(c===myCode) return;
+    const rel=compare(myCode,c);
+    rows.push({code:c,rel,comp:compScore(rel),conflict:conflictScore(rel),sim:similarScore(rel)});
+  });
+  return rows;
+}
+
+/* ═══════════ 4. 文案生成 ═══════════ */
+function dimName(k,ch){const i=LET[DIM_KEY.indexOf(k)].indexOf(ch);return DIM_INFO[k].opts[i];}
+function relDesc(rel,me,other){
+  const lines=[];
+  if(rel.compOpp.length) lines.push(`<b>互补加成：</b>${rel.compOpp.map(k=>DIM_INFO[k].benefit).join('；')}`);
+  if(rel.same.length) lines.push(`<b>同频之处：</b>你们在「${rel.same.map(k=>DIM_INFO[k].label).join('、')}」上取向一致，天然有默契。`);
+  if(rel.mixOpp.length) lines.push(`<b>要注意：</b>${rel.mixOpp.map(k=>DIM_INFO[k].risk).join('；')}`);
+  if(rel.conflictOpp.length) lines.push(`<b>潜在摩擦：</b>${rel.conflictOpp.map(k=>DIM_INFO[k].risk).join('；')}`);
+  return lines;
+}
+function scenarioOf(rel){
+  const s=new Set([...rel.compOpp,...rel.same]);
+  if(s.has('al')&&(s.has('dc')||s.has('op'))) return '工作搭档/创业合伙人';
+  if(s.has('sn')&&s.has('ei')) return '恋爱/亲密关系';
+  if(s.has('ei')||s.has('sn')) return '朋友搭子';
+  if(s.has('tf')) return '学习搭子/辩论队友';
+  return '游戏队友/旅行搭子';
+}
+function buildCards(myCode,rows){
+  const me=typeInfo(myCode);
+  rows.sort((x,y)=>y.comp-x.comp);
+  const comp=rows[0];
+  rows.sort((x,y)=>y.conflict-x.conflict);
+  const conflict=rows[0];
+  rows.sort((x,y)=>y.sim-x.sim);
+  const similar=rows[0];
+  renderMatch('cardComp',T('compTitle','🏆 天选互补搭子'),'comp',me,comp);
+  renderMatch('cardConflict',T('conflictTitle','💥 雷区冲突搭子'),'conflict',me,conflict);
+  renderMatch('cardSimilar',T('similarTitle','🤝 同类默契搭子'),'similar',me,similar);
+  buildTable(me,rows);
+}
+function renderMatch(id,title,cls,me,row){
+  const other=typeInfo(row.code);
+  const rel=row.rel;
+  const box=document.getElementById(id);
+  let html=`<h3>${title} <span class="mt-type">${other.name}</span><span class="mt-code">${other.code}</span></h3>`;
+  if(cls==='comp'){
+    html+=`<ul>
+      <li><b>${T('compWhy','为什么最互补')}：</b>${rel.compOpp.length?rel.compOpp.map(k=>DIM_INFO[k].benefit).join('；'):T('compDefaultWhy','你们在多个维度上形成天然咬合，彼此补上对方最缺的那块拼图。')}</li>
+      <li><b>${T('compGain','搭在一起的最大优势')}：</b>${rel.compOpp.length>=2?T('compDefaultGain','1+1>2 的组合，各自动能的短板都被对方补齐'):'彼此的同频让你省去大量沟通成本，配合顺畅'}</li>
+      <li><b>${T('compRisk','唯一小风险')}：</b>${rel.conflictOpp.length||rel.mixOpp.length?relDesc(rel)[relDesc(rel).length-1]:T('compDefaultRisk','互补部分可能让一方偶尔觉得「被看穿」')}</li>
+      <li><b>${T('compWork','最佳分工')}：</b>${rel.compOpp.map(k=>`${dimName(k,me.code[DIM_KEY.indexOf(k)])}方负责「${k==='dc'?'拍板推进':k==='sn'?'情绪支持':k==='ei'?'对外开拓':'兜底规划'}」，${dimName(k,other.code[DIM_KEY.indexOf(k)])}方负责「${k==='dc'?'风险把关':k==='sn'?'稳场安心':k==='ei'?'深度陪伴':'灵活破局'}」`).join('；')||'顺其自然，按各自所长分工即可'}</li>
+      <li><b>最佳适配场景：</b>${scenarioOf(rel)}</li>
+    </ul>`;
+  }else if(cls==='conflict'){
+    html+=`<ul>
+      <li><b>${T('conflictRoot','冲突根源')}：</b>${rel.conflictOpp.length?rel.conflictOpp.map(k=>DIM_INFO[k].risk).join('；'):T('conflictDefaultRoot','互补型差异没有直接雷区，但雷点藏在细节里，需要多沟通')}</li>
+      <li><b>${T('conflictPoint','高发矛盾点')}：</b>${rel.mixOpp.length?rel.mixOpp.map(k=>DIM_INFO[k].risk).join('；'):T('conflictDefaultPoint','对事情的优先级和投入程度认知不一致')}</li>
+      <li><b>${T('conflictCheck','可磨合判定')}：</b>${rel.conflictOpp.length>=2?'<span class="tag red">硬冲突，需大量刻意磨合</span>':rel.conflictOpp.length===1?'<span class="tag yellow">中度摩擦，可磨合</span>':'<span class="tag green">低冲突，主要靠理解差异</span>'}</li>
+      <li><b>${T('conflictAvoid','避雷方案')}：</b>${T('conflictAvoidTxt','先约定「观点归观点、感情归感情」，分歧时各退半步，把「我没错」换成「我们怎么共赢」')}</li>
+    </ul>`;
+  }else{
+    const shared=rel.same.map(k=>dimName(k,me.code[DIM_KEY.indexOf(k)])).join('、');
+    html+=`<ul>
+      <li><b>${T('similarGain','相似优势')}：</b>你们都是「${shared}」的类型，极度默契、互相秒懂，几乎不用解释。</li>
+      <li><b>${T('similarRisk','隐藏风险')}：</b>${rel.same.map(k=>`两个「${dimName(k,me.code[DIM_KEY.indexOf(k)])}」会让${DIM_INFO[k].label}侧的短板叠加放大`).join('；')}</li>
+      <li><b>${T('similarSupply','需要刻意补足')}：</b>${T('similarSupplyTxt','故意找点「不一样」的外部输入，避免两人一起陷入惯性思维。')}</li>
+      <li><b>最佳适配场景：</b>${scenarioOf(rel)}</li>
+    </ul>`;
+  }
+  box.innerHTML=html;
+}
+function buildTable(me,rows){
+  const tbody=document.getElementById('tableBody');
+  const sorted=[...rows].sort((a,b)=>b.comp-a.comp);
+  tbody.innerHTML=sorted.map(r=>{
+    const o=typeInfo(r.code);
+    const cls=r.comp>=8?'score-high':r.comp>=4?'score-mid':'score-low';
+    const scene=scenarioOf(r.rel);
+    return `<tr>
+      <td><b>${o.name}</b></td><td style="letter-spacing:1px;color:var(--sub)">${r.code}</td>
+      <td><span class="score-pill ${cls}">${r.comp}</span></td>
+      <td style="color:var(--sub);font-size:.8rem">${relDesc(r.rel,me.code,r.code)[0]||'—'} · ${scene}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ═══════════ 5. 雷达图 & 画像 ═══════════ */
+function drawRadar(pcts,code){
+  const box=document.getElementById('radarBox');
+  const size=280,cx=140,cy=140,R=100;
+  let svg=`<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+  const ang=(i)=>-Math.PI/2+i*Math.PI/3;
+  // 网格
+  for(let g=1;g<=4;g++){
+    const r=R*g/4;let pts=[];
+    for(let i=0;i<6;i++)pts.push(`${cx+r*Math.cos(ang(i))},${cy+r*Math.sin(ang(i))}`);
+    svg+=`<polygon points="${pts.join(' ')}" fill="none" stroke="rgba(255,255,255,.08)"/>`;
+  }
+  for(let i=0;i<6;i++)svg+=`<line x1="${cx}" y1="${cy}" x2="${cx+R*Math.cos(ang(i))}" y2="${cy+R*Math.sin(ang(i))}" stroke="rgba(255,255,255,.08)"/>`;
+  const vals=Object.keys(pcts).map(k=>pcts[k]);
+  let pts=[];for(let i=0;i<6;i++){const r=R*vals[i]/100;pts.push(`${cx+r*Math.cos(ang(i))},${cy+r*Math.sin(ang(i))}`);}
+  svg+=`<polygon points="${pts.join(' ')}" fill="rgba(139,92,246,.35)" stroke="#a78bfa" stroke-width="2"/>`;
+  // 标签
+  for(let i=0;i<6;i++){
+    const lx=cx+(R+26)*Math.cos(ang(i)),ly=cy+(R+26)*Math.sin(ang(i));
+    const k=DIM_KEY[i],ch=code[i],name=DIM_INFO[k].label;
+    const anchor=Math.abs(Math.cos(ang(i)))<0.3?'middle':(Math.cos(ang(i))>0?'start':'end');
+    svg+=`<text x="${lx}" y="${ly-4}" text-anchor="${anchor}" font-size="12" fill="#94a3b8">${name} ${ch}</text>`;
+    svg+=`<text x="${lx}" y="${ly+12}" text-anchor="${anchor}" font-size="13" font-weight="bold" fill="#e2e8f0">${vals[i]}%</text>`;
+  }
+  svg+='</svg>';
+  box.innerHTML=svg;
+  const bars=document.getElementById('dimBars');
+  bars.innerHTML=DIM_KEY.map(k=>{
+    const ch=code[DIM_KEY.indexOf(k)],pct=pcts[k];
+    return `<div class="dim-bar-row"><div class="dim-bar-label"><span>${DIM_INFO[k].label} <b>${dimName(k,ch)} ${pct}%</b></span></div>
+      <div class="dim-bar"><div class="dim-bar-fill" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+}
+function drawProfile(me){
+  const box=document.getElementById('profileBox');
+  box.innerHTML=`
+    <ul style="list-style:none">
+      <li style="padding:8px 0;border-bottom:1px solid var(--border);font-size:.9rem;color:var(--sub)"><b style="color:var(--green)">✨ 个人优势：</b>${me.code.split('').map(c=>TRAIT[c].strength).join('；')}</li>
+      <li style="padding:8px 0;border-bottom:1px solid var(--border);font-size:.9rem;color:var(--sub)"><b style="color:var(--red)">⚠️ 个人短板：</b>${me.code.split('').map(c=>TRAIT[c].weak).join('；')}</li>
+      <li style="padding:8px 0;font-size:.9rem;color:var(--sub)"><b style="color:var(--yellow)">🧭 适合的角色定位：</b>${me.role}</li>
+    </ul>`;
+}
+
+/* ═══════════ 6. 流程控制 ═══════════ */
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
+function startTest(){
+  buildQuestions();answers={};sel=[];curQ=0;
+  showPage('page-test');renderQ();
+}
+function renderQ(){
+  const q=QUESTIONS[curQ];
+  document.getElementById('pfill').style.width=`${(curQ+1)/QUESTIONS.length*100}%`;
+  document.getElementById('ptext').textContent=`${curQ+1} / ${QUESTIONS.length}`;
+  document.getElementById('qidx').textContent=`第 ${curQ+1} 题`;
+  document.getElementById('qtext').textContent=q.t;
+  document.getElementById('qopts').innerHTML=q.opts.map(o=>
+    `<button class="q-option ${answers[q.i]===o.val?'selected':''}" onclick="pick(${q.i},${o.val})">${o.txt}</button>`).join('');
+  document.getElementById('btnPrev').style.visibility=curQ===0?'hidden':'visible';
+  document.getElementById('btnNext').innerHTML=curQ===QUESTIONS.length-1?'完成 🎉':'下一题 →';
+}
+function pick(qi,val){answers[qi]=val;renderQ();if(curQ<QUESTIONS.length-1){setTimeout(()=>{curQ++;renderQ();},160);}else{setTimeout(showResult,260);}}
+function nextQ(){if(curQ<QUESTIONS.length-1){curQ++;renderQ();}else showResult();}
+function prevQ(){if(curQ>0){curQ--;renderQ();}}
+function showResult(){
+  const {code,pcts}=calcResult();
+  const me=typeInfo(code);
+  document.getElementById('resEmoji').textContent=emojiOf(code);
+  document.getElementById('resName').innerHTML=`${me.name}`;
+  document.getElementById('resCode').textContent=code;
+  document.getElementById('resTags').innerHTML=me.tags.map(t=>`<span class="tag">${t}</span>`).join(' ');
+  document.getElementById('resDesc').textContent=me.desc;
+  drawRadar(pcts,code);
+  drawProfile(me);
+  const rows=rankAgainst(code);
+  buildCards(code,rows);
+  showPage('page-result');
+  localStorage.setItem('dazi_result',JSON.stringify({code,pcts}));
+  try{fetch('/api/records',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,pcts,ts:new Date().toISOString()})});}catch(e){}
+}
+function emojiOf(code){
+  const m={
+    'D':'🦁','C':'🦉','S':'🛡️','N':'💧','E':'☀️','I':'🌙','O':'📐','P':'🍃','T':'⚙️','F':'💗','A':'🚀','L':'🛋️'
+  };
+  return code.split('').map(c=>m[c]||'✨').join('');
+}
+function resetAll(){localStorage.removeItem('dazi_result');startTest();}
+
+/* ═══════════ 7. 分享 & 海报 ═══════════ */
+function loadSaved(){
+  const s=localStorage.getItem('dazi_result');
+  if(s){const {code,pcts}=JSON.parse(s);const me=typeInfo(code);
+    document.getElementById('resEmoji').textContent=emojiOf(code);
+    document.getElementById('resName').innerHTML=me.name;
+    document.getElementById('resCode').textContent=code;
+    document.getElementById('resTags').innerHTML=me.tags.map(t=>`<span class="tag">${t}</span>`).join(' ');
+    document.getElementById('resDesc').textContent=me.desc;
+    drawRadar(pcts,code);drawProfile(me);buildCards(code,rankAgainst(code));}
+}
+function copyShare(){
+  const s=localStorage.getItem('dazi_result');
+  if(!s){toast('先完成测试哦');return;}
+  const {code}=JSON.parse(s);const me=typeInfo(code);
+  const rows=rankAgainst(code);rows.sort((a,b)=>b.comp-a.comp);const c=rows[0];
+  rows.sort((a,b)=>b.conflict-a.conflict);const f=rows[0];
+  const txt=`我的人格是【${me.name} ${code}】🧩\n天选互补搭子：${typeInfo(c.code).name} 🏆\n雷区冲突搭子：${typeInfo(f.code).name} 💥\n你是哪种？敢来测一测吗？`;
+  if(navigator.clipboard){navigator.clipboard.writeText(txt).then(()=>toast('已复制分享文案 ✅')).catch(()=>fallbackCopy(txt));}
+  else fallbackCopy(txt);
+}
+function fallbackCopy(txt){const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('已复制分享文案 ✅');}
+function genPoster(){
+  const s=localStorage.getItem('dazi_result');
+  if(!s){toast('先完成测试哦');return;}
+  const {code,pcts}=JSON.parse(s);const me=typeInfo(code);
+  const rows=rankAgainst(code);rows.sort((a,b)=>b.comp-a.comp);const c=rows[0];
+  rows.sort((a,b)=>b.conflict-a.conflict);const f=rows[0];
+  const cv=document.getElementById('posterCanvas');
+  cv.width=900;cv.height=1200;
+  const ctx=cv.getContext('2d');
+  const grd=ctx.createLinearGradient(0,0,0,1200);grd.addColorStop(0,'#1e1b4b');grd.addColorStop(.5,'#302b63');grd.addColorStop(1,'#0f0c29');
+  ctx.fillStyle=grd;ctx.fillRect(0,0,900,1200);
+  // 星星
+  for(let i=0;i<120;i++){ctx.fillStyle=`rgba(255,255,255,${Math.random()*.6})`;ctx.beginPath();ctx.arc(Math.random()*900,Math.random()*700,Math.random()*2.2,0,7);ctx.fill();}
+  ctx.textAlign='center';
+  ctx.fillStyle='rgba(255,255,255,.5)';ctx.font='26px sans-serif';ctx.fillText('🧩 人格搭子 · 互补匹配',450,90);
+  ctx.fillStyle='#a78bfa';ctx.font='bold 60px sans-serif';ctx.fillText('我的人格是',450,220);
+  ctx.fillStyle='#fff';ctx.font='900 110px sans-serif';ctx.fillText(me.name,450,360);
+  ctx.fillStyle='#f472b6';ctx.font='bold 64px sans-serif';ctx.fillText(code,450,450);
+  ctx.fillStyle='rgba(255,255,255,.85)';ctx.font='32px sans-serif';ctx.fillText('六维人格：'+DIM_KEY.map((k,i)=>DIM_INFO[k].label+' '+code[i]).join(' · '),450,520);
+  // 分割
+  ctx.fillStyle='rgba(255,255,255,.12)';ctx.fillRect(90,570,720,2);
+  ctx.fillStyle='#34d399';ctx.font='bold 40px sans-serif';ctx.fillText('🏆 天选互补搭子',450,660);
+  ctx.fillStyle='#fff';ctx.font='bold 72px sans-serif';ctx.fillText(typeInfo(c.code).name,450,750);
+  ctx.fillStyle='#a78bfa';ctx.font='bold 40px sans-serif';ctx.fillText(typeInfo(c.code).code,450,815);
+  ctx.fillStyle='#f87171';ctx.font='bold 40px sans-serif';ctx.fillText('💥 雷区冲突搭子',450,920);
+  ctx.fillStyle='#fff';ctx.font='bold 72px sans-serif';ctx.fillText(typeInfo(f.code).name,450,1010);
+  ctx.fillStyle='#f87171';ctx.font='bold 40px sans-serif';ctx.fillText(typeInfo(f.code).code,450,1075);
+  ctx.fillStyle='rgba(255,255,255,.6)';ctx.font='28px sans-serif';ctx.fillText('你敢测吗？测出谁最适合你、谁最克你 →',450,1160);
+  document.getElementById('posterModal').classList.add('show');
+}
+function downloadPoster(){const a=document.createElement('a');a.href=document.getElementById('posterCanvas').toDataURL('image/png');a.download='我的人格搭子.png';a.click();}
+function closePoster(){document.getElementById('posterModal').classList.remove('show');}
+function toggleTable(){const w=document.getElementById('tableWrap');const b=document.getElementById('btnTable');w.style.display=w.style.display==='none'?'block':'none';b.textContent=w.style.display==='none'?'📖 查看 64 种人格适配总表':'📕 收起适配总表';}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+/* 星星背景 */
+(function(){const s=document.getElementById('stars');for(let i=0;i<80;i++){const st=document.createElement('div');st.className='star';const sz=Math.random()*3+1;st.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${(Math.random()*4+2).toFixed(1)}s`;s.appendChild(st);}})();
+
+/* 恢复存档 */
+loadSaved();
+</script>
+</body>
+</html>
