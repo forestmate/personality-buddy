@@ -330,7 +330,8 @@ const OPTS=['非常同意','比较同意','不太同意','很不同意'];
 let QUESTIONS=[],answers={},curQ=0,sel=[];
 function buildQuestions(){
   const QDATA=(CFG&&CFG.questions&&CFG.questions.length)?CFG.questions:RAW_Q;
-  QUESTIONS=QDATA.map((q,i)=>({...q,i}));
+  // 兼容字段名：云端 config 用 text，本地兜底用 t，统一为 t
+  QUESTIONS=QDATA.map((q,i)=>({...q,t:q.t||q.text||'',i}));
   // 打乱题目顺序（防刷题）
   for(let i=QUESTIONS.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[QUESTIONS[i],QUESTIONS[j]]=[QUESTIONS[j],QUESTIONS[i]];}
   // 打乱选项顺序
